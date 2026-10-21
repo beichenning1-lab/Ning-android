@@ -3,6 +3,7 @@ package com.ning.app;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -42,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " Polaris/2.0");
+        s.setUserAgentString(s.getUserAgentString() + " Polaris/3.0");
 
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
@@ -107,6 +108,17 @@ public class MainActivity extends AppCompatActivity {
         public void saveToken(String t) {
             getSharedPreferences("polaris", MODE_PRIVATE).edit().putString("token", t).apply();
         }
+
+        @JavascriptInterface
+        public void saveFriends(String json) {
+            try {
+                getSharedPreferences("polaris", MODE_PRIVATE).edit().putString("friends", json).apply();
+                PolarisWidget.updateAll(MainActivity.this);
+            } catch (Exception ignored) {}
+        }
+
+        @JavascriptInterface
+        public void refreshWidget() { PolarisWidget.updateAll(MainActivity.this); }
 
         @JavascriptInterface
         public void openUsageSettings() {

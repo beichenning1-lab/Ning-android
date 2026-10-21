@@ -37,6 +37,7 @@ public class PolarisService extends Service {
                 @Override
                 public void run() {
                     reporter.tick();
+                    PolarisWidget.updateAll(PolarisService.this);
                     handler.postDelayed(this, reporter.nextInterval());
                 }
             };

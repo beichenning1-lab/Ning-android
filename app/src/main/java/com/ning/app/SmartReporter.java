@@ -8,8 +8,11 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -67,6 +70,7 @@ public class SmartReporter implements SensorEventListener {
                 SharedPreferences sp = ctx.getSharedPreferences("polaris", Context.MODE_PRIVATE);
                 String token = sp.getString("token", "");
                 if (token.isEmpty()) return;
+
                 JSONObject body = new JSONObject();
                 try {
                     JSONObject bat = new JSONObject(DeviceHelper.getBattery(ctx));
@@ -88,21 +92,56 @@ public class SmartReporter implements SensorEventListener {
                     }
                 } catch (Exception ignored) {}
 
-                URL url = new URL(API + "/api/status");
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setConnectTimeout(10000);
-                conn.setReadTimeout(10000);
-                conn.setDoOutput(true);
-                conn.setRequestProperty("Content-Type", "application/json");
-                conn.setRequestProperty("Authorization", "Bearer " + token);
-                try (OutputStream os = conn.getOutputStream()) {
-                    os.write(body.toString().getBytes(StandardCharsets.UTF_8));
+                postJson(API + "/api/status", token, body);
+
+                sp.edit().putString("self_status", body.toString()).apply();
+
+                String friendsRaw = httpGet(API + "/api/friends", token);
+                if (friendsRaw != null && friendsRaw.startsWith("[")) {
+                    sp.edit().putString("friends", friendsRaw).apply();
                 }
-                Log.d("Polaris", "report " + conn.getResponseCode() + " " + body);
-                conn.disconnect();
-            } catch (Exception e) { Log.e("Polaris", "report failed", e); }
+
+                PolarisWidget.updateAll(ctx);
+            } catch (Exception e) { Log.e("Polaris", "tick failed", e); }
         });
+    }
+
+    private void postJson(String urlStr, String token, JSONObject body) {
+        try {
+            URL url = new URL(urlStr);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(10000);
+            conn.setDoOutput(true);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(body.toString().getBytes(StandardCharsets.UTF_8));
+            }
+            conn.getResponseCode();
+            conn.disconnect();
+        } catch (Exception ignored) {}
+    }
+
+    private String httpGet(String urlStr, String token) {
+        try {
+            URL url = new URL(urlStr);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(10000);
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+            int code = conn.getResponseCode();
+            if (code != 200) { conn.disconnect(); return null; }
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+            }
+            conn.disconnect();
+            return sb.toString();
+        } catch (Exception e) { return null; }
     }
 
     public void destroy() {
