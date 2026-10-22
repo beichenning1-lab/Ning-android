@@ -2,8 +2,8 @@ package com.ning.app;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -17,14 +17,10 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
     private static final String START_URL = "https://zyn0130.top:8443";
     private WebView webView;
 
@@ -61,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void requestAllPermissions() {
+        if (Build.VERSION.SDK_INT < 23) return;
         List<String> perms = new ArrayList<>();
         perms.add(Manifest.permission.ACCESS_FINE_LOCATION);
         perms.add(Manifest.permission.ACCESS_COARSE_LOCATION);
@@ -68,27 +65,29 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= 29) perms.add(Manifest.permission.ACTIVITY_RECOGNITION);
         List<String> need = new ArrayList<>();
         for (String p : perms) {
-            if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) need.add(p);
+            if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED) need.add(p);
         }
-        if (!need.isEmpty()) ActivityCompat.requestPermissions(this, need.toArray(new String[0]), 1001);
+        if (!need.isEmpty()) requestPermissions(need.toArray(new String[0]), 1001);
     }
 
     private void startPolarisService() {
-        Intent i = new Intent(this, PolarisService.class);
-        if (Build.VERSION.SDK_INT >= 26) startForegroundService(i);
-        else startService(i);
+        try {
+            Intent i = new Intent(this, PolarisService.class);
+            if (Build.VERSION.SDK_INT >= 26) startForegroundService(i);
+            else startService(i);
+        } catch (Exception ignored) {}
     }
 
     private void askIgnoreBatteryOptimization() {
         if (Build.VERSION.SDK_INT < 23) return;
-        PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
-        if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
-            try {
+        try {
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+            if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
                 Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
                 i.setData(Uri.parse("package:" + getPackageName()));
                 startActivity(i);
-            } catch (Exception ignored) {}
-        }
+            }
+        } catch (Exception ignored) {}
     }
 
     public class JsBridge {

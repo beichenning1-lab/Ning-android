@@ -11,9 +11,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 
-import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
-
 public class PolarisService extends Service {
     public static final String CHANNEL_ID = "polaris_service";
     public static final int NOTIF_ID = 1001;
@@ -36,8 +33,8 @@ public class PolarisService extends Service {
             loop = new Runnable() {
                 @Override
                 public void run() {
-                    reporter.tick();
-                    PolarisWidget.updateAll(PolarisService.this);
+                    try { reporter.tick(); } catch (Exception ignored) {}
+                    try { PolarisWidget.updateAll(PolarisService.this); } catch (Exception ignored) {}
                     handler.postDelayed(this, reporter.nextInterval());
                 }
             };
@@ -46,7 +43,6 @@ public class PolarisService extends Service {
         return START_STICKY;
     }
 
-    @Nullable
     @Override
     public IBinder onBind(Intent intent) { return null; }
 
@@ -69,13 +65,22 @@ public class PolarisService extends Service {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private Notification buildNotification(String text) {
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("北极星")
-                .setContentText(text)
-                .setSmallIcon(android.R.drawable.ic_menu_compass)
-                .setOngoing(true)
-                .setPriority(NotificationCompat.PRIORITY_MIN)
-                .build();
+        if (Build.VERSION.SDK_INT >= 26) {
+            return new Notification.Builder(this, CHANNEL_ID)
+                    .setContentTitle("北极星")
+                    .setContentText(text)
+                    .setSmallIcon(android.R.drawable.ic_menu_compass)
+                    .setOngoing(true)
+                    .build();
+        } else {
+            return new Notification.Builder(this)
+                    .setContentTitle("北极星")
+                    .setContentText(text)
+                    .setSmallIcon(android.R.drawable.ic_menu_compass)
+                    .setOngoing(true)
+                    .build();
+        }
     }
 }
