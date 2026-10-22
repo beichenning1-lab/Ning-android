@@ -23,8 +23,11 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import android.webkit.ValueCallback;
 
 public class MainActivity extends Activity {
+    private ValueCallback<Uri[]> mFilePathCallback;
+
     private static final String START_URL = "https://zyn0130.top:8443";
     private WebView webView;
 
@@ -53,6 +56,18 @@ public class MainActivity extends Activity {
                 callback.invoke(origin, true, false);
             }
             @Override
+            public boolean onShowFileChooser(WebView wv, ValueCallback<Uri[]> cb, FileChooserParams params) {
+                if (mFilePathCallback != null) mFilePathCallback.onReceiveValue(null);
+                mFilePathCallback = cb;
+                try {
+                    startActivityForResult(params.createIntent(), 1002);
+                } catch (Exception e) {
+                    mFilePathCallback = null;
+                    return false;
+                }
+                return true;
+            }
+            @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(new Runnable() {
                     @Override public void run() {
@@ -66,6 +81,29 @@ public class MainActivity extends Activity {
 
         requestAllPermissions();
         startPolarisService();
+    }
+
+    @Override
+    protected void onActivityResult(int req, int res, Intent data) {
+        if (req == 1002) {
+            if (mFilePathCallback == null) { super.onActivityResult(req, res, data); return; }
+            Uri[] results = null;
+            if (res == RESULT_OK) {
+                if (data == null || data.getDataString() == null) {
+                    if (data != null && data.getClipData() != null) {
+                        int n = data.getClipData().getItemCount();
+                        results = new Uri[n];
+                        for (int i = 0; i < n; i++) results[i] = data.getClipData().getItemAt(i).getUri();
+                    }
+                } else {
+                    results = new Uri[]{ Uri.parse(data.getDataString()) };
+                }
+            }
+            mFilePathCallback.onReceiveValue(results);
+            mFilePathCallback = null;
+        } else {
+            super.onActivityResult(req, res, data);
+        }
     }
 
     private void requestAllPermissions() {
