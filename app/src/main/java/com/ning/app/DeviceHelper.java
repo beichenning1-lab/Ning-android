@@ -9,8 +9,6 @@ import android.location.LocationManager;
 import android.os.BatteryManager;
 import android.os.Build;
 
-import androidx.core.content.ContextCompat;
-
 import org.json.JSONObject;
 
 public class DeviceHelper {
@@ -34,7 +32,7 @@ public class DeviceHelper {
 
     public static String getLocation(Context ctx) {
         try {
-            if (ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.ACCESS_FINE_LOCATION)
+            if (ctx.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
                     != PackageManager.PERMISSION_GRANTED) return "{}";
             LocationManager lm = (LocationManager) ctx.getSystemService(Context.LOCATION_SERVICE);
             Location best = null;
