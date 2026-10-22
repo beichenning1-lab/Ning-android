@@ -17,11 +17,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Debug env
+      - name: Download Gradle 8.5
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          ls $ANDROID_HOME/platforms/ 2>/dev/null
-          ls $ANDROID_HOME/build-tools/ 2>/dev/null
+          wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
+          unzip -q gradle-8.5-bin.zip
+          echo "$PWD/gradle-8.5/bin" >> $GITHUB_PATH
+          ./gradle-8.5/bin/gradle --version
 
       - name: Install SDK 34
         run: |
