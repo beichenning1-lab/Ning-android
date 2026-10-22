@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="polaris_primary">#667EEA</color>
-    <color name="polaris_secondary">#764BA2</color>
+    <color name="ic_launcher_background">#0F1429</color>
 </resources>

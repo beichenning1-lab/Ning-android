@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="messages" android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/sc_msg"
+        android:shortcutLongLabel="@string/sc_msg_long">
+        <intent android:action="android.intent.action.VIEW"
+            android:targetPackage="com.ning.app"
+            android:targetClass="com.ning.app.MainActivity"
+            android:data="polaris://messages" />
+    </shortcut>
+    <shortcut android:shortcutId="moments" android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/sc_moments"
+        android:shortcutLongLabel="@string/sc_moments_long">
+        <intent android:action="android.intent.action.VIEW"
+            android:targetPackage="com.ning.app"
+            android:targetClass="com.ning.app.MainActivity"
+            android:data="polaris://moments" />
+    </shortcut>
+    <shortcut android:shortcutId="map" android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/sc_map"
+        android:shortcutLongLabel="@string/sc_map_long">
+        <intent android:action="android.intent.action.VIEW"
+            android:targetPackage="com.ning.app"
+            android:targetClass="com.ning.app.MainActivity"
+            android:data="polaris://map" />
+    </shortcut>
+    <shortcut android:shortcutId="qr" android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/sc_qr"
+        android:shortcutLongLabel="@string/sc_qr_long">
+        <intent android:action="android.intent.action.VIEW"
+            android:targetPackage="com.ning.app"
+            android:targetClass="com.ning.app.MainActivity"
+            android:data="polaris://qr" />
+    </shortcut>
+</shortcuts>

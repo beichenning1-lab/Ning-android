@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sc_msg">发消息</string>
+    <string name="sc_msg_long">打开消息列表</string>
+    <string name="sc_moments">看动态</string>
+    <string name="sc_moments_long">打开朋友圈动态</string>
+    <string name="sc_map">看地图</string>
+    <string name="sc_map_long">打开好友地图</string>
+    <string name="sc_qr">我的二维码</string>
+    <string name="sc_qr_long">打开我的二维码</string>
+    <string name="widget_desc">显示好友电量状态</string>
+</resources>
