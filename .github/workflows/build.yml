@@ -17,16 +17,28 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Clear ALL Gradle caches
+        run: |
+          rm -rf ~/.gradle
+          rm -rf ${{ github.workspace }}/.gradle
+          rm -rf ${{ github.workspace }}/build
+          rm -rf ${{ github.workspace }}/app/build
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.5'
+          cache-disabled: true
 
       - name: Build APK
-        run: gradle assembleDebug --no-daemon
+        run: gradle assembleDebug --no-daemon --no-build-cache
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: Ning-APK
           path: app/build/outputs/apk/debug/*.apk
