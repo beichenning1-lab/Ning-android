@@ -17,24 +17,26 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Clear ALL Gradle caches
+      - name: Show environment
         run: |
-          rm -rf ~/.gradle
-          rm -rf ${{ github.workspace }}/.gradle
-          rm -rf ${{ github.workspace }}/build
-          rm -rf ${{ github.workspace }}/app/build
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          ls -d $ANDROID_HOME 2>/dev/null || echo "no ANDROID_HOME"
+          ls -d /usr/local/lib/android/sdk 2>/dev/null || echo "no default path"
+          which gradle && gradle --version
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '7.5'
-          cache-disabled: true
+      - name: Configure project
+        run: |
+          if [ -z "$ANDROID_HOME" ]; then
+            if [ -d /usr/local/lib/android/sdk ]; then
+              echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+              echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+            fi
+          fi
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       - name: Build APK
-        run: gradle assembleDebug --no-daemon --no-build-cache
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
