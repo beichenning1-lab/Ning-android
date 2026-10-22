@@ -3,6 +3,7 @@ package com.ning.app;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.usage.UsageStatsManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -16,6 +17,8 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +42,7 @@ public class MainActivity extends Activity {
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " Polaris/3.0");
+        s.setUserAgentString(s.getUserAgentString() + " Polaris/4.0");
 
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
@@ -53,7 +56,6 @@ public class MainActivity extends Activity {
 
         requestAllPermissions();
         startPolarisService();
-        askIgnoreBatteryOptimization();
     }
 
     private void requestAllPermissions() {
@@ -78,18 +80,6 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {}
     }
 
-    private void askIgnoreBatteryOptimization() {
-        if (Build.VERSION.SDK_INT < 23) return;
-        try {
-            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
-            if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
-                Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                i.setData(Uri.parse("package:" + getPackageName()));
-                startActivity(i);
-            }
-        } catch (Exception ignored) {}
-    }
-
     public class JsBridge {
         @JavascriptInterface
         public String getBattery() { return DeviceHelper.getBattery(MainActivity.this); }
@@ -102,6 +92,38 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getInfo() { return DeviceHelper.getInfo(); }
+
+        @JavascriptInterface
+        public String checkPermissions() {
+            try {
+                JSONObject o = new JSONObject();
+                boolean loc = Build.VERSION.SDK_INT < 23
+                        || checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+                o.put("location", loc);
+                boolean notif = Build.VERSION.SDK_INT < 33
+                        || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+                o.put("notification", notif);
+                boolean act = Build.VERSION.SDK_INT < 29
+                        || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED;
+                o.put("activity", act);
+                boolean usage = false;
+                try {
+                    UsageStatsManager usm = (UsageStatsManager) getSystemService(USAGE_STATS_SERVICE);
+                    long now = System.currentTimeMillis();
+                    List<?> list = usm == null ? null : usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, now - 1000L * 60 * 60 * 24, now);
+                    usage = list != null && !list.isEmpty();
+                } catch (Exception ignored) {}
+                o.put("usage", usage);
+                boolean battery = false;
+                try {
+                    PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+                    battery = pm != null && pm.isIgnoringBatteryOptimizations(getPackageName());
+                } catch (Exception ignored) {}
+                o.put("battery", battery);
+                o.put("platform", "android");
+                return o.toString();
+            } catch (Exception e) { return "{}"; }
+        }
 
         @JavascriptInterface
         public void saveToken(String t) {
@@ -125,7 +147,30 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void openBatterySettings() { askIgnoreBatteryOptimization(); }
+        public void openBatterySettings() {
+            try {
+                Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                i.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(i);
+            } catch (Exception ignored) {}
+        }
+
+        @JavascriptInterface
+        public void openAppSettings() {
+            try {
+                Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                i.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(i);
+            } catch (Exception ignored) {}
+        }
+
+        @JavascriptInterface
+        public void openLocationSettings() {
+            try { startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)); } catch (Exception ignored) {}
+        }
+
+        @JavascriptInterface
+        public void requestPermissionsAgain() { runOnUiThread(new Runnable() { public void run() { requestAllPermissions(); } }); }
     }
 
     @Override
