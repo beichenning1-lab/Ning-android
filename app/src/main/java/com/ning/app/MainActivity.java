@@ -13,6 +13,7 @@ import android.os.PowerManager;
 import android.provider.Settings;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JavascriptInterface;
+import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -41,14 +42,23 @@ public class MainActivity extends Activity {
         s.setGeolocationEnabled(true);
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
+        s.setMediaPlaybackRequiresUserGesture(false);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " Polaris/4.0");
+        s.setUserAgentString(s.getUserAgentString() + " Polaris/5.0");
 
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
                 callback.invoke(origin, true, false);
+            }
+            @Override
+            public void onPermissionRequest(final PermissionRequest request) {
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        try { request.grant(request.getResources()); } catch (Exception ignored) {}
+                    }
+                });
             }
         });
         webView.addJavascriptInterface(new JsBridge(), "Android");
@@ -63,6 +73,8 @@ public class MainActivity extends Activity {
         List<String> perms = new ArrayList<>();
         perms.add(Manifest.permission.ACCESS_FINE_LOCATION);
         perms.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        perms.add(Manifest.permission.CAMERA);
+        perms.add(Manifest.permission.RECORD_AUDIO);
         if (Build.VERSION.SDK_INT >= 33) perms.add(Manifest.permission.POST_NOTIFICATIONS);
         if (Build.VERSION.SDK_INT >= 29) perms.add(Manifest.permission.ACTIVITY_RECOGNITION);
         List<String> need = new ArrayList<>();
@@ -94,18 +106,17 @@ public class MainActivity extends Activity {
         public String getInfo() { return DeviceHelper.getInfo(); }
 
         @JavascriptInterface
+        public String getHealth() { return HealthHelper.getHealth(MainActivity.this); }
+
+        @JavascriptInterface
         public String checkPermissions() {
             try {
                 JSONObject o = new JSONObject();
-                boolean loc = Build.VERSION.SDK_INT < 23
-                        || checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-                o.put("location", loc);
-                boolean notif = Build.VERSION.SDK_INT < 33
-                        || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
-                o.put("notification", notif);
-                boolean act = Build.VERSION.SDK_INT < 29
-                        || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED;
-                o.put("activity", act);
+                o.put("location", Build.VERSION.SDK_INT < 23 || checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED);
+                o.put("notification", Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED);
+                o.put("activity", Build.VERSION.SDK_INT < 29 || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED);
+                o.put("camera", Build.VERSION.SDK_INT < 23 || checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED);
+                o.put("microphone", Build.VERSION.SDK_INT < 23 || checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED);
                 boolean usage = false;
                 try {
                     UsageStatsManager usm = (UsageStatsManager) getSystemService(USAGE_STATS_SERVICE);

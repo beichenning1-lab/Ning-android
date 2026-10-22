@@ -8,7 +8,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -27,6 +26,7 @@ public class SmartReporter implements SensorEventListener {
     private final SensorManager sm;
     private long lastMoveTs = 0;
     private boolean moving = false;
+    private int tickCount = 0;
 
     public SmartReporter(Context ctx) {
         this.ctx = ctx;
@@ -93,8 +93,17 @@ public class SmartReporter implements SensorEventListener {
                 } catch (Exception ignored) {}
 
                 postJson(API + "/api/status", token, body);
-
                 sp.edit().putString("self_status", body.toString()).apply();
+
+                tickCount++;
+                if (tickCount % 2 == 0) {
+                    try {
+                        JSONObject h = new JSONObject(HealthHelper.getHealth(ctx));
+                        if (h.has("steps") || h.has("sleepMinutes")) {
+                            postJson(API + "/api/health-data", token, h);
+                        }
+                    } catch (Exception ignored) {}
+                }
 
                 String friendsRaw = httpGet(API + "/api/friends", token);
                 if (friendsRaw != null && friendsRaw.startsWith("[")) {
