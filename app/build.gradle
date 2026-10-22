@@ -7,13 +7,13 @@ android {
         applicationId "com.ning.app"
         minSdk 24
         targetSdk 34
-        versionCode 5
-        versionName "3.2"
+        versionCode 6
+        versionName "3.3"
     }
     buildTypes { release { minifyEnabled false } }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
     lint { abortOnError false }
 }
